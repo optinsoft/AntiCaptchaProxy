@@ -1,0 +1,6 @@
+@AntiCaptchaProxy_HostAddress = http://localhost:5195
+
+GET {{AntiCaptchaProxy_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
