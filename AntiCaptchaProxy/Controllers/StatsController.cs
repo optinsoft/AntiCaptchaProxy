@@ -1,4 +1,5 @@
 ﻿using AntiCaptchaProxy.Interfaces;
+using AntiCaptchaProxy.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,8 +16,8 @@ namespace AntiCaptchaProxy.Controllers
             _antiCaptchaService = antiCaptchaService;
         }
 
-        [HttpGet(Name = "Stats")]
-        public ActionResult<StatsResponse> GeStats()
+        [HttpGet(Name = "getStats")]
+        public ActionResult<StatsResponse> GetStats()
         {
             return Ok(new StatsResponse
             {

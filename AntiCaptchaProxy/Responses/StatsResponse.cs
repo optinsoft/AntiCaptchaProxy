@@ -1,4 +1,4 @@
-﻿namespace AntiCaptchaProxy
+﻿namespace AntiCaptchaProxy.Responses
 {
     public class StatsResponse
     {
