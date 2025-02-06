@@ -14,6 +14,7 @@ namespace AntiCaptchaProxy.Services
         private int _getTaskResultSucceeded = 0;
         private int _getTaskResultFailed = 0;
         private int _getTaskResultErrors = 0;
+        private BalanceStats? _lastBalance = null;
 
         private readonly object _statsLock = new();
 
@@ -44,7 +45,23 @@ namespace AntiCaptchaProxy.Services
                 };
             }
         }
-   
+
+        public BalanceStats? GetLastBalance()
+        {
+            lock (_statsLock)
+            {
+                if (_lastBalance == null)
+                {
+                    return null;
+                }
+                return new BalanceStats()
+                {
+                    balance = _lastBalance.balance,
+                    balanceTime = _lastBalance.balanceTime
+                };
+            }
+        }
+
         public void IncCreateTaskCount()
         {
             lock (_statsLock)
@@ -106,6 +123,19 @@ namespace AntiCaptchaProxy.Services
             lock(_statsLock)
             {
                 _getTaskResultErrors++;
+            }
+        }
+
+        public void UpdateLastBalance(double balance)
+        {
+            lock (_statsLock)
+            {
+                if (_lastBalance == null)
+                {
+                    _lastBalance = new BalanceStats();
+                }
+                _lastBalance.balance = balance;
+                _lastBalance.balanceTime = $"{DateTime.Now}";
             }
         }
     }

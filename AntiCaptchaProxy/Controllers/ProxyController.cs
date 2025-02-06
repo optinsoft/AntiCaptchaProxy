@@ -26,6 +26,11 @@ namespace AntiCaptchaProxy.Controllers
                 if (responseMessage.IsSuccessStatusCode)
                 {
                     var responseJson = await responseMessage.Content.ReadAsStringAsync();
+                    var response = JsonConvert.DeserializeObject<BalanceResponse>(responseJson);
+                    if (response?.balance != null)
+                    {
+                        antiCaptchaService.UpdateLastBalance(response.balance.Value);
+                    }
                     return new ContentResult
                     {
                         Content = responseJson,
@@ -57,6 +62,11 @@ namespace AntiCaptchaProxy.Controllers
                 if (responseMessage.IsSuccessStatusCode)
                 {
                     var responseJson = await responseMessage.Content.ReadAsStringAsync();
+                    var response = JsonConvert.DeserializeObject<BalanceResponse>(responseJson);
+                    if (response?.balance != null)
+                    {
+                        antiCaptchaService.UpdateLastBalance(response.balance.Value);
+                    }
                     return new ContentResult
                     {
                         Content = responseJson,

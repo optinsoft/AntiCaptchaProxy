@@ -6,6 +6,7 @@ namespace AntiCaptchaProxy.Interfaces
     {
         string GetServiceInfo();
         ProxyStats GetProxyStats();
+        BalanceStats? GetLastBalance();
         void IncCreateTaskCount();
         void IncCreateTaskSucceeded();
         void IncCreateTaskFailed();
@@ -14,5 +15,6 @@ namespace AntiCaptchaProxy.Interfaces
         void IncGetTaskResultSucceeded();
         void IncGetTaskResultFailed();
         void IncGetTaskResultErrors();
+        void UpdateLastBalance(double balance);
     }
 }
