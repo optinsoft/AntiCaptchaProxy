@@ -1,11 +1,13 @@
 ﻿using AntiCaptchaProxy.Interfaces;
 using AntiCaptchaProxy.Models;
 using AntiCaptchaProxy.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AntiCaptchaProxy.Controllers
 {
+    [Authorize]
     [Route("[controller]")]
     [ApiController]
     public class ProxyStatsController(IAntiCaptchaService antiCaptchaService) : ControllerBase

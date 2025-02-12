@@ -1,10 +1,18 @@
 using AntiCaptchaProxy.Interfaces;
 using AntiCaptchaProxy.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using static AntiCaptchaProxy.LocalhostMiddlware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var jwtAuthConfig = builder.Configuration.GetSection("Authentication:Jwt");
+var jwtAuthEnabled = jwtAuthConfig.GetValue<bool>("Enabled");
+
 var AllowAllCors = "AllowAllCors";
+
+// Add services to the container.
 
 builder.Services.AddSingleton<IAntiCaptchaService, AntiCaptchaService>();
 
@@ -16,7 +24,22 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader());
 });
 
-// Add services to the container.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    if (jwtAuthEnabled)
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidateAudience = true,
+            ValidIssuer = jwtAuthConfig.GetValue<string>("Issuer"),
+            ValidAudience = jwtAuthConfig.GetValue<string>("Audience"),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtAuthConfig.GetValue<string>("Key") ?? string.Empty))
+        };
+    }
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -42,6 +65,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(AllowAllCors);
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
