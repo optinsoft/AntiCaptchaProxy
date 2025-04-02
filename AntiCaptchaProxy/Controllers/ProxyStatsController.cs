@@ -4,19 +4,19 @@ using AntiCaptchaProxy.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AntiCaptchaProxy.Controllers
 {
     [Authorize]
     [Route("[controller]")]
     [ApiController]
-    public class ProxyStatsController(IAntiCaptchaService antiCaptchaService) : ControllerBase
+    public class ProxyStatsController(IAntiCaptchaService antiCaptchaService, ProxyStatsDb db) : ControllerBase
     {
         [HttpGet(Name = "getStats")]
-        public ActionResult<StatsResponse> GetStats()
+        public async Task<ActionResult<StatsResponse>> GetStats()
         {
-            var proxyStats = antiCaptchaService.GetProxyStats();
-            var lastBalance = antiCaptchaService.GetLastBalance();
+            var proxyStats = await antiCaptchaService.GetProxyStats(db);
             return Ok(new StatsResponse
             {
                 serviceInfo = antiCaptchaService.GetServiceInfo(),
@@ -28,9 +28,32 @@ namespace AntiCaptchaProxy.Controllers
                 getTaskResultSucceeded = proxyStats.GetTaskResultSucceeded,
                 getTaskResultFailed = proxyStats.GetTaskResultFailed,
                 getTaskResultErrors = proxyStats.GetTaskResultErrors,
-                lastBalance = lastBalance?.balance,
-                lastBalanceTime = lastBalance?.balanceTime
+                lastBalance = proxyStats.LastBalance,
+                lastBalanceTime = proxyStats.LastBalanceTime
             });
         }
+
+        [HttpPost("incCreateTaskCount")]
+        public async Task<ActionResult<SuccessResponse>> IncCreateTaskCount()
+        {
+            await antiCaptchaService.IncCreateTaskCount(db);
+            return Ok(new SuccessResponse
+            {
+                success = true,
+                message = "SUCCESS"
+            });
+        }
+
+        [HttpPost("incGetTaskResultCount")]
+        public async Task<ActionResult<SuccessResponse>> IncGetTaskResultCount()
+        {
+            await antiCaptchaService.IncGetTaskResultCount(db);
+            return Ok(new SuccessResponse
+            {
+                success = true,
+                message = "SUCCESS"
+            });
+        }
+
     }
 }

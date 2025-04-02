@@ -1,20 +1,19 @@
 ﻿using AntiCaptchaProxy.Interfaces;
 using AntiCaptchaProxy.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AntiCaptchaProxy.Services
 {
     public class AntiCaptchaService : IAntiCaptchaService
     {
+        private static readonly Guid GUID_ProxyStats = new("82afec2663784eab35240b75059f56b1");
+
+        private bool _dbSynchronized = false;
+
         private readonly string _serviceInfo;
-        private int _createTaskCount = 0;
-        private int _createTaskSucceeded = 0;
-        private int _createTaskFailed = 0;
-        private int _createTaskErrors = 0;
-        private int _getTaskResultCount = 0;
-        private int _getTaskResultSucceeded = 0;
-        private int _getTaskResultFailed = 0;
-        private int _getTaskResultErrors = 0;
-        private BalanceStats? _lastBalance = null;
+        private readonly ProxyStats _proxyStats = new() {
+            Id = GUID_ProxyStats
+        };
 
         private readonly object _statsLock = new();
 
@@ -28,115 +27,151 @@ namespace AntiCaptchaProxy.Services
             return _serviceInfo;
         }
 
-        public ProxyStats GetProxyStats()
+        private async Task<ProxyStats> GetDbProxyStats(ProxyStatsDb db)
         {
-            lock (_statsLock)
+            var dbProxyStats = await db.AntiCaptchaStats.FindAsync(GUID_ProxyStats);
+            if (dbProxyStats == null)
             {
-                return new ProxyStats()
+                dbProxyStats = new();
+                lock (_statsLock)
                 {
-                    CreateTaskCount = _createTaskCount,
-                    CreateTaskSucceeded = _createTaskSucceeded,
-                    CreateTaskFailed = _createTaskFailed,
-                    CreateTaskErrors = _createTaskErrors,
-                    GetTaskResultCount = _getTaskResultCount,
-                    GetTaskResultSucceeded = _getTaskResultSucceeded,
-                    GetTaskResultFailed = _getTaskResultFailed,
-                    GetTaskResultErrors = _getTaskResultErrors
-                };
-            }
-        }
-
-        public BalanceStats? GetLastBalance()
-        {
-            lock (_statsLock)
-            {
-                if (_lastBalance == null)
-                {
-                    return null;
+                    dbProxyStats.Assign(_proxyStats);
                 }
-                return new BalanceStats()
+                await db.AntiCaptchaStats.AddAsync(dbProxyStats);
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                if (!_dbSynchronized)
                 {
-                    balance = _lastBalance.balance,
-                    balanceTime = _lastBalance.balanceTime
-                };
+                    lock (_statsLock)
+                    {
+                        if (!_dbSynchronized)
+                        {
+                            _proxyStats.Assign(dbProxyStats);
+                            _dbSynchronized = true;
+                        }
+                    }
+                }
+
             }
+            return dbProxyStats;
         }
 
-        public void IncCreateTaskCount()
+        private static async Task UpdateProxyStatsDb(ProxyStatsDb db, ProxyStats proxyStats)
         {
+            db.Entry(proxyStats).State = EntityState.Modified;
+            await db.SaveChangesAsync();
+        }
+
+        public async Task<ProxyStats> GetProxyStats(ProxyStatsDb db)
+        {
+            var proxyStats = await GetDbProxyStats(db);
             lock (_statsLock)
             {
-                _createTaskCount++;
+                proxyStats.Assign(_proxyStats);
             }
+            return proxyStats;
         }
 
-        public void IncCreateTaskSucceeded()
+        public async Task IncCreateTaskCount(ProxyStatsDb db)
         {
+            var proxyStats = await GetDbProxyStats(db);
             lock (_statsLock)
             {
-                _createTaskSucceeded++;
+                _proxyStats.CreateTaskCount++;
+                proxyStats.Assign(_proxyStats);
             }
+            await UpdateProxyStatsDb(db, proxyStats);
         }
 
-        public void IncCreateTaskFailed()
+        public async Task IncCreateTaskSucceeded(ProxyStatsDb db)
         {
+            var proxyStats = await GetDbProxyStats(db);
+            lock (_statsLock)
+            {
+                _proxyStats.CreateTaskSucceeded++;
+                proxyStats.Assign(_proxyStats);
+            }
+            await UpdateProxyStatsDb(db, proxyStats);
+        }
+
+        public async Task IncCreateTaskFailed(ProxyStatsDb db)
+        {
+            var proxyStats = await GetDbProxyStats(db);
             lock ( _statsLock)
             { 
-                _createTaskFailed++;
+                _proxyStats.CreateTaskFailed++;
+                proxyStats.Assign(_proxyStats);
             }
+            await UpdateProxyStatsDb(db, proxyStats);
         }
 
-        public void IncCreateTaskErrors()
+        public async Task IncCreateTaskErrors(ProxyStatsDb db)
         {
-            lock( _statsLock)
+            var proxyStats = await GetDbProxyStats(db);
+            lock ( _statsLock)
             {
-                _createTaskErrors++;
+                _proxyStats.CreateTaskErrors++;
+                proxyStats.Assign(_proxyStats);
             }
+            await UpdateProxyStatsDb(db, proxyStats);
         }
 
-        public void IncGetTaskResultCount()
+        public async Task IncGetTaskResultCount(ProxyStatsDb db)
         {
+            var proxyStats = await GetDbProxyStats(db);
             lock (_statsLock)
             {
-                _getTaskResultCount++;
+                _proxyStats.GetTaskResultCount++;
+                proxyStats.Assign(_proxyStats);
             }
+            await UpdateProxyStatsDb(db, proxyStats);
         }
 
-        public void IncGetTaskResultSucceeded()
+        public async Task IncGetTaskResultSucceeded(ProxyStatsDb db)
         {
-            lock(_statsLock)
-            {
-                _getTaskResultSucceeded++;
-            }
-        }
-
-        public void IncGetTaskResultFailed()
-        {
-            lock(_statsLock)
-            {
-                _getTaskResultFailed++;
-            }
-        }
-
-        public void IncGetTaskResultErrors()
-        {
-            lock(_statsLock)
-            {
-                _getTaskResultErrors++;
-            }
-        }
-
-        public void UpdateLastBalance(double balance)
-        {
+            var proxyStats = await GetDbProxyStats(db);
             lock (_statsLock)
             {
-                if (_lastBalance == null)
-                {
-                    _lastBalance = new BalanceStats();
-                }
-                _lastBalance.balance = balance;
-                _lastBalance.balanceTime = $"{DateTime.Now}";
+                _proxyStats.GetTaskResultSucceeded++;
+                proxyStats.Assign(_proxyStats);
             }
+            await UpdateProxyStatsDb(db, proxyStats);
+        }
+
+        public async Task IncGetTaskResultFailed(ProxyStatsDb db)
+        {
+            var proxyStats = await GetDbProxyStats(db);
+            lock (_statsLock)
+            {
+                _proxyStats.GetTaskResultFailed++;
+                proxyStats.Assign(_proxyStats);
+            }
+            await UpdateProxyStatsDb(db, proxyStats);
+        }
+
+        public async Task IncGetTaskResultErrors(ProxyStatsDb db)
+        {
+            var proxyStats = await GetDbProxyStats(db);
+            lock (_statsLock)
+            {
+                _proxyStats.GetTaskResultErrors++;
+                proxyStats.Assign(_proxyStats);
+            }
+            await UpdateProxyStatsDb(db, proxyStats);
+        }
+
+        public async Task UpdateLastBalance(ProxyStatsDb db, double balance)
+        {
+            var proxyStats = await GetDbProxyStats(db);
+            lock (_statsLock)
+            {
+                _proxyStats.LastBalance = balance;
+                _proxyStats.LastBalanceTime = $"{DateTime.Now}";
+                proxyStats.Assign(_proxyStats);
+            }
+            await UpdateProxyStatsDb(db, proxyStats);
         }
     }
 }

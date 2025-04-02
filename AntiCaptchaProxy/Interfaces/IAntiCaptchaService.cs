@@ -5,16 +5,15 @@ namespace AntiCaptchaProxy.Interfaces
     public interface IAntiCaptchaService
     {
         string GetServiceInfo();
-        ProxyStats GetProxyStats();
-        BalanceStats? GetLastBalance();
-        void IncCreateTaskCount();
-        void IncCreateTaskSucceeded();
-        void IncCreateTaskFailed();
-        void IncCreateTaskErrors(); 
-        void IncGetTaskResultCount();
-        void IncGetTaskResultSucceeded();
-        void IncGetTaskResultFailed();
-        void IncGetTaskResultErrors();
-        void UpdateLastBalance(double balance);
+        Task<ProxyStats> GetProxyStats(ProxyStatsDb db);
+        Task IncCreateTaskCount(ProxyStatsDb db);
+        Task IncCreateTaskSucceeded(ProxyStatsDb db);
+        Task IncCreateTaskFailed(ProxyStatsDb db);
+        Task IncCreateTaskErrors(ProxyStatsDb db);
+        Task IncGetTaskResultCount(ProxyStatsDb db);
+        Task IncGetTaskResultSucceeded(ProxyStatsDb db);
+        Task IncGetTaskResultFailed(ProxyStatsDb db);
+        Task IncGetTaskResultErrors(ProxyStatsDb db);
+        Task UpdateLastBalance(ProxyStatsDb db, double balance);
     }
 }

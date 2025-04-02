@@ -1,4 +1,5 @@
 ﻿using AntiCaptchaProxy.Interfaces;
+using AntiCaptchaProxy.Models;
 using AntiCaptchaProxy.Requests;
 using AntiCaptchaProxy.Responses;
 using AntiCaptchaProxy.Services;
@@ -11,7 +12,7 @@ namespace AntiCaptchaProxy.Controllers
 {
     //[Route("[controller]")]
     [ApiController]
-    public class ProxyController(IAntiCaptchaService antiCaptchaService) : ControllerBase
+    public class ProxyController(IAntiCaptchaService antiCaptchaService, ProxyStatsDb db) : ControllerBase
     {
         private readonly HttpClient client = new();
 
@@ -29,7 +30,7 @@ namespace AntiCaptchaProxy.Controllers
                     var response = JsonConvert.DeserializeObject<BalanceResponse>(responseJson);
                     if (response?.balance != null)
                     {
-                        antiCaptchaService.UpdateLastBalance(response.balance.Value);
+                        await antiCaptchaService.UpdateLastBalance(db, response.balance.Value);
                     }
                     return new ContentResult
                     {
@@ -65,7 +66,7 @@ namespace AntiCaptchaProxy.Controllers
                     var response = JsonConvert.DeserializeObject<BalanceResponse>(responseJson);
                     if (response?.balance != null)
                     {
-                        antiCaptchaService.UpdateLastBalance(response.balance.Value);
+                        await antiCaptchaService.UpdateLastBalance(db, response.balance.Value);
                     }
                     return new ContentResult
                     {
@@ -88,7 +89,7 @@ namespace AntiCaptchaProxy.Controllers
         {
             try
             {
-                antiCaptchaService.IncCreateTaskCount();
+                await antiCaptchaService.IncCreateTaskCount(db);
                 Request.Body.Seek(0, SeekOrigin.Begin);
                 using StreamReader reader = new(Request.Body, Encoding.UTF8);
                 string requestJson = await reader.ReadToEndAsync();
@@ -101,11 +102,11 @@ namespace AntiCaptchaProxy.Controllers
                     var response = JsonConvert.DeserializeObject<CreateTaskResponse>(responseJson);
                     if (response != null && response.errorId == 0)
                     {
-                        antiCaptchaService.IncCreateTaskSucceeded();
+                        await antiCaptchaService.IncCreateTaskSucceeded(db);
                     }
                     else
                     {
-                        antiCaptchaService.IncCreateTaskErrors();
+                       await  antiCaptchaService.IncCreateTaskErrors(db);
                     }
                     return new ContentResult
                     {
@@ -114,12 +115,12 @@ namespace AntiCaptchaProxy.Controllers
                         StatusCode = 200
                     };
                 }
-                antiCaptchaService.IncCreateTaskFailed();
+                await antiCaptchaService.IncCreateTaskFailed(db);
                 return StatusCode(500, $"Request failed with status {responseMessage.StatusCode}");
             }
             catch (Exception ex)
             {
-                antiCaptchaService.IncCreateTaskFailed();
+                await antiCaptchaService.IncCreateTaskFailed(db);
                 return StatusCode(500, $"Internal error: {ex.Message}");
             }
         }
@@ -131,7 +132,7 @@ namespace AntiCaptchaProxy.Controllers
         {
             try
             {
-                antiCaptchaService.IncCreateTaskCount();
+                await antiCaptchaService.IncCreateTaskCount(db);
                 Request.Body.Seek(0, SeekOrigin.Begin);
                 using StreamReader reader = new(Request.Body, Encoding.UTF8);
                 string requestJson = await reader.ReadToEndAsync();
@@ -144,11 +145,11 @@ namespace AntiCaptchaProxy.Controllers
                     var response = JsonConvert.DeserializeObject<CreateTaskResponse>(responseJson);
                     if (response != null && response.errorId == 0)
                     {
-                        antiCaptchaService.IncCreateTaskSucceeded();
+                        await antiCaptchaService.IncCreateTaskSucceeded(db);
                     }
                     else
                     {
-                        antiCaptchaService.IncCreateTaskErrors();
+                        await antiCaptchaService.IncCreateTaskErrors(db);
                     }
                     return new ContentResult
                     {
@@ -157,12 +158,12 @@ namespace AntiCaptchaProxy.Controllers
                         StatusCode = 200
                     };
                 }
-                antiCaptchaService.IncCreateTaskFailed();
+                await antiCaptchaService.IncCreateTaskFailed(db);
                 return StatusCode(500, $"Request failed with status {responseMessage.StatusCode}");
             }
             catch (Exception ex)
             {
-                antiCaptchaService.IncCreateTaskFailed();
+                await antiCaptchaService.IncCreateTaskFailed(db);
                 return StatusCode(500, $"Internal error: {ex.Message}");
             }
         }
@@ -173,7 +174,7 @@ namespace AntiCaptchaProxy.Controllers
         {
             try
             {
-                antiCaptchaService.IncGetTaskResultCount();
+                await antiCaptchaService.IncGetTaskResultCount(db);
                 HttpResponseMessage responseMessage = await client.PostAsJsonAsync(
                     "https://api.anti-captcha.com/getTaskResult", request);
                 if (responseMessage.IsSuccessStatusCode)
@@ -182,11 +183,11 @@ namespace AntiCaptchaProxy.Controllers
                     var response = JsonConvert.DeserializeObject<GetTaskResultResponse>(responseJson);
                     if (response != null && response.errorId == 0)
                     {
-                        antiCaptchaService.IncGetTaskResultSucceeded();
+                        await antiCaptchaService.IncGetTaskResultSucceeded(db);
                     }
                     else
                     {
-                        antiCaptchaService.IncGetTaskResultErrors();
+                        await antiCaptchaService.IncGetTaskResultErrors(db);
                     }
                     return new ContentResult
                     {
@@ -195,12 +196,12 @@ namespace AntiCaptchaProxy.Controllers
                         StatusCode = 200
                     };
                 }
-                antiCaptchaService.IncGetTaskResultFailed();
+                await antiCaptchaService.IncGetTaskResultFailed(db);
                 return StatusCode(500, $"Request failed with status {responseMessage.StatusCode}");
             }
             catch (Exception ex)
             {
-                antiCaptchaService.IncGetTaskResultFailed();
+                await antiCaptchaService.IncGetTaskResultFailed(db);
                 return StatusCode(500, $"Internal error: {ex.Message}");
             }
         }
@@ -212,7 +213,7 @@ namespace AntiCaptchaProxy.Controllers
         {
             try
             {
-                antiCaptchaService.IncGetTaskResultCount();
+                await antiCaptchaService.IncGetTaskResultCount(db);
                 Request.Body.Seek(0, SeekOrigin.Begin);
                 using StreamReader reader = new(Request.Body, Encoding.UTF8);
                 string requestJson = await reader.ReadToEndAsync();
@@ -225,11 +226,11 @@ namespace AntiCaptchaProxy.Controllers
                     var response = JsonConvert.DeserializeObject<GetTaskResultResponse>(responseJson);
                     if (response != null && response.errorId == 0)
                     {
-                        antiCaptchaService.IncGetTaskResultSucceeded();
+                        await antiCaptchaService.IncGetTaskResultSucceeded(db);
                     }
                     else
                     {
-                        antiCaptchaService.IncGetTaskResultErrors();
+                        await antiCaptchaService.IncGetTaskResultErrors(db);
                     }
                     return new ContentResult
                     {
@@ -238,12 +239,12 @@ namespace AntiCaptchaProxy.Controllers
                         StatusCode = 200
                     };
                 }
-                antiCaptchaService.IncGetTaskResultFailed();
+                await antiCaptchaService.IncGetTaskResultFailed(db);
                 return StatusCode(500, $"Request failed with status {responseMessage.StatusCode}");
             }
             catch (Exception ex)
             {
-                antiCaptchaService.IncGetTaskResultFailed();
+                await antiCaptchaService.IncGetTaskResultFailed(db);
                 return StatusCode(500, $"Internal error: {ex.Message}");
             }
         }
